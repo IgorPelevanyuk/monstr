@@ -12,7 +12,6 @@ def get_modules():
         for cur_importer, cur_modname, cur_ispkg in pkgutil.iter_modules(current.__path__):
             if  modname == cur_modname:
                 modules[cur_modname] = import_module('Monstr.Modules.' + modname + '.' + cur_modname)
-
     return modules
 
 def main():
