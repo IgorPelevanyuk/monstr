@@ -97,6 +97,39 @@ class PhedexErrors(BaseModule.BaseModule):
                     print count, ' of ', total, ' done'
         return {'main': insert_list}
 
+
+    #==========================================================================
+    #                 Web
+    #==========================================================================    
+
+    def lastStatus(self, incoming_params):
+        response = {}
+        try:
+            default_params = {'delta': 8}
+            params = self._create_params(default_params, incoming_params)
+            result = []
+            max_time = self.db_handler.get_session().query(func.max(self.tables['main'].c.time_done).label("max_time")).one()
+            if max_time[0]:
+                max_time = max_time[0]
+                query = self.tables['main'].select(self.tables['main'].c.time_done > max_time - timedelta(hours=params['delta']))
+                cursor = query.execute()
+                resultProxy = cursor.fetchall()
+                for row in resultProxy:
+                    result.append(dict(row.items()))
+            response = {'data': result, 
+                        'applied_params': params,
+                        'success': True}
+        except Exception as e:
+            response = {'data': result, 
+                        'incoming_params': incoming_params,
+                        'default_params': [[key, default_params[key], type(default_params[key]) ] for key in default_params],
+                        'success': False,
+                        'error': type(e).__name__ + ': ' + e.message}
+
+        return response
+
+    rest_links = {'lastStatus': lastStatus}
+
 def main():
     X = PhedexErrors()
     X.ExecuteCheck()
