@@ -1,4 +1,4 @@
-from sqlalchemy import Table, Column, Integer, String, BigInteger, DateTime, Enum, Text, UniqueConstraint, MetaData
+from sqlalchemy import Table, Column, Integer, Float, String, BigInteger, DateTime, Enum, Text, UniqueConstraint, MetaData
 from sqlalchemy import create_engine
 from sqlalchemy.exc import NoSuchTableError
 from sqlalchemy.orm import sessionmaker
