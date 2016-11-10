@@ -1,4 +1,4 @@
-#!/bin/python
+
 
 import Monstr.Core.Utils as Utils
 import Monstr.Core.DB as DB
@@ -11,8 +11,8 @@ from Monstr.Core.DB import Column, BigInteger, Integer, String, Float, DateTime,
 from sqlalchemy.sql import func
 
 
-class PhedexTramsfers(BaseModule.BaseModule):
-    name = 'PhedexTramsfers'
+class PhedexTransfers(BaseModule.BaseModule):
+    name = 'PhedexTransfers'
     table_schemas = {'main': (Column('id', Integer, primary_key=True),
                               Column('instance', String(10)),
                               Column('to', String(40)),
@@ -26,7 +26,7 @@ class PhedexTramsfers(BaseModule.BaseModule):
                               Column('fail_files', Integer),
                               Column('fail_bytes', BigInteger),
                               Column('quality', Float), #from String
-                              Column('time', dateTime(True)))
+                              Column('time', DateTime(True)))
                               #rate: done_bytes/binwidth(3600)
                     }
 
@@ -118,7 +118,7 @@ class PhedexTramsfers(BaseModule.BaseModule):
 
 
 def main():
-    X = PhedexErrors()
+    X = PhedexTransfers()
     #X.ExecuteCheck()
     
 if __name__=='__main__':
