@@ -8,6 +8,7 @@ from datetime import datetime
 import json
 
 from Monstr.Core.DB import Column, Integer, String, Text, DateTime
+from sqlalchemy.sql import func
 
 class SSB(BaseModule.BaseModule):
     name = 'SSB'    
@@ -39,7 +40,7 @@ class SSB(BaseModule.BaseModule):
         self.db_handler = DB.DBHandler()
 
     def Retrieve(self, params):
-        retrieve_time = Utils.get_UTC_now().replace(minute=0, second=0, microsecond=0)
+        retrieve_time = Utils.get_UTC_now().replace(second=0, microsecond=0)
         result = {'T1_RU_JINR': {}, 'T1_RU_JINR_Buffer': {}, 'T1_RU_JINR_Disk': {}}
         
         column_names = {}
@@ -79,14 +80,16 @@ class SSB(BaseModule.BaseModule):
             params = self._create_params(default_params, incoming_params)
             result = []
 
+            max_time = self.db_handler.get_session().query(func.max(self.tables['main'].c.time).label("max_time")).one()
+
             if params['site_name'] == '': 
-                query = self.tables['main'].select()         
+                query = self.tables['main'].select(self.tables['main'].c.time == max_time)         
             # site_name=T1_RU_JINR|T1_RU_JINR_Disk
             elif len(params['site_name'].split('|')) == 2: 
                 foo = params['site_name'].split('|')
-                query = self.tables['main'].select((self.tables['main'].c.site_name == foo[0]) | (self.tables['main'].c.site_name == foo[1]))
+                query = self.tables['main'].select((self.tables['main'].c.time == max_time)&(self.tables['main'].c.site_name == foo[0]) | (self.tables['main'].c.site_name == foo[1]))
             else:
-                query = self.tables['main'].select(self.tables['main'].c.site_name == params['site_name'])
+                query = self.tables['main'].select((self.tables['main'].c.time == max_time)&(self.tables['main'].c.site_name == params['site_name']))
 
             cursor = query.execute()
             resultProxy = cursor.fetchall()
