@@ -1,4 +1,4 @@
-
+#!/bin/python
 
 import Monstr.Core.Utils as Utils
 import Monstr.Core.DB as DB
@@ -6,6 +6,8 @@ import Monstr.Core.BaseModule as BaseModule
 
 from datetime import timedelta
 import json
+import pytz
+from pprint import pprint as pp
 
 from Monstr.Core.DB import Column, BigInteger, Integer, String, Float, DateTime, Text, UniqueConstraint
 from sqlalchemy.sql import func
@@ -25,18 +27,19 @@ class PhedexTransfers(BaseModule.BaseModule):
                               Column('expire_bytes', BigInteger),
                               Column('fail_files', Integer),
                               Column('fail_bytes', BigInteger),
-                              Column('quality', Float), #from String
-                              Column('time', DateTime(True)))
+                              Column('time', DateTime(True)),
+                              Column('binwidth', Integer))
                               #rate: done_bytes/binwidth(3600)
                     }
 
-    config = {'site': 'T1_RU_JINR'}
+    config = {'site': 'T1_RU_JINR*',
+              'binwidth': 600}
 
     HOSTNAME = "http://cmsweb.cern.ch"
-    REQUESTS = {"prod": {"from": "/phedex/datasvc/json/prod/TransferHistory?from=<site>&binwidth=3600",
-                         "to": "/phedex/datasvc/json/prod/TransferHistory?to=<site>&binwidth=3600"},
-                "debug": {"from": "/phedex/datasvc/json/debug/TransferHistory?from=<site>&binwidth=3600",
-                         "to": "/phedex/datasvc/json/debug/TransferHistory?to=<site>&binwidth=3600"}}
+    REQUESTS = {"prod": {"from": "/phedex/datasvc/json/prod/TransferHistory?from=<site>&binwidth=<binwidth>&endtime=<endtime>",
+                         "to": "/phedex/datasvc/json/prod/TransferHistory?to=<site>&binwidth=<binwidth>&endtime=<endtime>"},
+                "debug": {"from": "/phedex/datasvc/json/debug/TransferHistory?from=<site>&binwidth=<binwidth>&endtime=<endtime>",
+                         "to": "/phedex/datasvc/json/debug/TransferHistory?to=<site>&binwidth=<binwidth>&endtime=<endtime>"}}
 
     def __init__(self):
         super(PhedexTransfers, self).__init__()
@@ -44,43 +47,49 @@ class PhedexTransfers(BaseModule.BaseModule):
 
     def PrepareRetrieve(self):
         # TODO: Introduce filling of absent hours
+        current_time = Utils.get_UTC_now().replace(second=0, microsecond=0)
         last_row = self.db_handler.get_session().query(func.max(self.tables['main'].c.time).label("max_time_done")).one()
-
+        print last_row
+        horizon = Utils.get_UTC_now().replace(minute=0, second=0, microsecond=0) - timedelta(hours=3)
         if last_row[0]:
-            horizon = last_row[0] - timedelta(hours=3)
-            #errors = Retrieve(horizon)
-            avaliable_errors = self.db_handler.get_session().query(self.tables['main']).filter(self.tables['main'].c.time_done > (horizon).date()).all()
-        else:
-            horizon = Utils.epoch_to_datetime(0)
-            #errors = Retrieve()
-            avaliable_errors = []
-        return {'horizon': horizon,
-                'avaliable_errors': avaliable_errors}
+            last_time = last_row[0].astimezone(pytz.utc)
+            if current_time - last_time < timedelta(hours=3):
+                horizon = last_time + timedelta(seconds=self.config['binwidth'])
+
+        return {'horizon': horizon}
 
     def Retrieve(self, params):
         insert_list = []
-        retrieve_time = Utils.get_UTC_now().replace(minute=0, second=0, microsecond=0)
-        for instance in self.REQUESTS:
-            for direction in self.REQUESTS[instance]:
-                url = self.HOSTNAME+ self.REQUESTS[instance][direction].replace('<site>', self.config['site'])
-                json_raw = Utils.get_page(url)
-                json_obj = json.loads(json_raw)['phedex']['link']
-                for link in json_obj:
-                    details = link['transfer'][0]
-                    transfer = {'instance': instance,
-                                'from': link['from'],
-                                'to': link['to'],
-                                'time': retrieve_time,
-                                'done_files': details['done_files'],
-                                'done_bytes': details['done_bytes'],
-                                'try_files': details['try_files'],
-                                'try_bytes': details['try_bytes'],
-                                'expire_files': details['expire_files'],
-                                'expire_bytes': details['expire_bytes'],
-                                'fail_files': details['fail_files'],
-                                'fail_bytes': details['fail_bytes'],
-                                'quality': float(details['quality'])
+        retrieve_time = Utils.get_UTC_now()
+        horizon = params['horizon']
+        binwidth = self.config['binwidth']
+        endtime = horizon + timedelta(seconds=binwidth)
+        while endtime < retrieve_time:
+            for instance in self.REQUESTS:
+                for direction in self.REQUESTS[instance]:
+                    params = dict(self.config)
+                    params['endtime'] = Utils.datetime_to_epoch(endtime)
+                    url = Utils.build_URL(self.HOSTNAME + self.REQUESTS[instance][direction], params)
+                    json_raw = Utils.get_page(url)
+                    json_obj = json.loads(json_raw)['phedex']['link']
+                    for link in json_obj:
+                        details = link['transfer'][0]
+                        transfer = {'instance': instance,
+                                    'from': link['from'],
+                                    'to': link['to'],
+                                    'done_files': details['done_files'],
+                                    'done_bytes': details['done_bytes'],
+                                    'try_files': details['try_files'],
+                                    'try_bytes': details['try_bytes'],
+                                    'expire_files': details['expire_files'],
+                                    'expire_bytes': details['expire_bytes'],
+                                    'fail_files': details['fail_files'],
+                                    'fail_bytes': details['fail_bytes'],
+                                    'time': endtime - timedelta(seconds=binwidth),
+                                    'binwidth': binwidth,
                                 }
+                        insert_list.append(transfer)
+            endtime += timedelta(seconds=binwidth)
         return {'main': insert_list}
 
 
@@ -91,13 +100,13 @@ class PhedexTransfers(BaseModule.BaseModule):
     def lastStatus(self, incoming_params):
         response = {}
         try:
-            default_params = {'delta': 8}
+            default_params = {'delta': 1}
             params = self._create_params(default_params, incoming_params)
             result = []
-            max_time = self.db_handler.get_session().query(func.max(self.tables['main'].c.time_done).label("max_time")).one()
+            max_time = self.db_handler.get_session().query(func.max(self.tables['main'].c.time).label("max_time")).one()
             if max_time[0]:
                 max_time = max_time[0]
-                query = self.tables['main'].select(self.tables['main'].c.time_done > max_time - timedelta(hours=params['delta']))
+                query = self.tables['main'].select(self.tables['main'].c.time > max_time - timedelta(hours=params['delta']))
                 cursor = query.execute()
                 resultProxy = cursor.fetchall()
                 for row in resultProxy:
@@ -119,7 +128,8 @@ class PhedexTransfers(BaseModule.BaseModule):
 
 def main():
     X = PhedexTransfers()
-    #X.ExecuteCheck()
+    #pp(X.Retrieve({'horizon': Utils.get_UTC_now().replace(minute=0, second=0, microsecond=0) - timedelta(hours=1)}))
+    X.ExecuteCheck()
     
 if __name__=='__main__':
     main()
