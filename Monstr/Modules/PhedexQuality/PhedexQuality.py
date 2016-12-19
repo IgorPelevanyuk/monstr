@@ -103,13 +103,13 @@ class PhedexQuality(BaseModule.BaseModule):
     def lastStatus(self, incoming_params):
         response = {}
         try:
-            default_params = {'delta': 8}
+            default_params = {'delta': 8, 'instance': 'prod'}
             params = self._create_params(default_params, incoming_params)
             result = []
             max_time = self.db_handler.get_session().query(func.max(self.tables['main'].c.time).label("max_time")).one()
             if max_time[0]:
                 max_time = max_time[0]
-                query = self.tables['main'].select(self.tables['main'].c.time > max_time - timedelta(hours=params['delta']))
+                query = self.tables['main'].select((self.tables['main'].c.time > max_time - timedelta(hours=params['delta']))&(self.tables['main'].c.instance == params['instance']))
                 cursor = query.execute()
                 resultProxy = cursor.fetchall()
                 for row in resultProxy:
