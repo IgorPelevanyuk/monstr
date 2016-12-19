@@ -42,15 +42,19 @@ class DBHandler():
         db_tables = iengine.get_table_names()
 
         if name not in db_tables:
+            print "Table is absent. Making table ...."
             self.makeTable(name, schema)
         table = Table(name, self.metadata, autoload=True)
         db_columns = iengine.get_columns(name)
         db_column_names = [c["name"] for c in iengine.get_columns(name)]
         model_column_names = [c.name for c in schema if c.name!=None]
         if set(model_column_names) != set(db_column_names):
-            print 'do not correspond'
+            print 'DB do not correspond Schema'
             self.session.close()
-            table.drop()
+            table.drop(self.engine, checkfirst=False)
+            self.engine.dispose() 
+            self.initDB()
+            print iengine.get_table_names()
             table = self.makeTable(name, schema)
 
         return table
