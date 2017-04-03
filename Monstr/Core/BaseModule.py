@@ -102,12 +102,14 @@ class BaseModule():
             self.db_handler.insert(journal, row)
             return
 
-        try:
-            self.InsertToDB(data)
-        except Exception as e:
-            row = self._create_journal_row('Fail', 'InsertToDB', e)
-            self.db_handler.insert(journal, row)
-            return
+        # try:
+        #     self.InsertToDB(data)
+        # except Exception as e:
+        #     row = self._create_journal_row('Fail', 'InsertToDB', e)
+        #     self.db_handler.insert(journal, row)
+        #     return
+        self.InsertToDB(data)
+
 
         row = self._create_journal_row('Success')
         self.db_handler.insert(journal, row)
