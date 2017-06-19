@@ -2,8 +2,6 @@ from abc import ABCMeta, abstractmethod
 import Monstr.Core.DB as DB
 import Monstr.Core.Utils as Utils
 
-
-
 # ,----------------------.
 # |BaseNodule            |
 # |----------------------|
@@ -26,7 +24,15 @@ class BaseModule():
     name = None
     table_schemas = None
     tables = None
+    status_table = None
+    status_list = []
     db_handler = None
+
+    status_schema = {'status': (DB.Column('id', DB.Integer, primary_key=True),
+                     DB.Column('name', DB.String(64)),
+                     DB.Column('status', DB.String(32)),
+                     DB.Column('time', DB.DateTime(True)),
+                     DB.Column('description', DB.Text),)}
 
     journal_schema = (DB.Column('id', DB.Integer, primary_key=True),
                       DB.Column('module', DB.String(64)),
@@ -53,7 +59,6 @@ class BaseModule():
                 result[key] = type(default_params[key])(params[key])
         return result
 
-
     rest_links = {}
 
     def __init__(self):
@@ -65,19 +70,24 @@ class BaseModule():
         if self.table_schemas is None:
             raise "Module require schemas list"
         self.tables = self.db_handler.initialize(self.table_schemas, self.name)
-
+        self.status_table = self.db_handler.initialize(self.status_schema, self.name, self.status_list)
 
     def PrepareRetrieve(self):
         return {}
 
-    @abstractmethod
     def Retrieve(self, params):
+        pass
+
+    def Analyze(self, data):
+        pass
+
+    def React(self, events):
         pass
 
     def InsertToDB(self, data):
         for schema in data:
             table = self.tables[schema]
-            self.db_handler.bulk_insert(table, data[schema])        
+            self.db_handler.bulk_insert(table, data[schema])
 
     def ExecuteCheck(self):
         journal = self.db_handler.getOrCreateTable('monstr_Journal', self.journal_schema)
@@ -86,6 +96,7 @@ class BaseModule():
         except Exception as e:
             row = self._create_journal_row('Fail', 'Initialize', e)
             self.db_handler.insert(journal, row)
+            print e
             return
 
         try:
@@ -93,6 +104,7 @@ class BaseModule():
         except Exception as e:
             row = self._create_journal_row('Fail', 'PrepareRetrieve', e)
             self.db_handler.insert(journal, row)
+            print e
             return
 
         try:
@@ -100,16 +112,24 @@ class BaseModule():
         except Exception as e:
             row = self._create_journal_row('Fail', 'Retrieve', e)
             self.db_handler.insert(journal, row)
+            print e
             return
 
-        # try:
-        #     self.InsertToDB(data)
-        # except Exception as e:
-        #     row = self._create_journal_row('Fail', 'InsertToDB', e)
-        #     self.db_handler.insert(journal, row)
-        #     return
-        self.InsertToDB(data)
+        try:
+            self.InsertToDB(data)
+        except Exception as e:
+            row = self._create_journal_row('Fail', 'InsertToDB', e)
+            self.db_handler.insert(journal, row)
+            print e
+            return
 
+        try:
+            self.Analyze(data)
+        except Exception as e:
+            row = self._create_journal_row('Fail', 'Analyze', e)
+            self.db_handler.insert(journal, row)
+            print e
+            return
 
         row = self._create_journal_row('Success')
         self.db_handler.insert(journal, row)

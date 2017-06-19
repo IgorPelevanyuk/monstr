@@ -1,4 +1,4 @@
-from sqlalchemy import Table, Column, Integer, Float, String, BigInteger, DateTime, Enum, Text, UniqueConstraint, MetaData
+from sqlalchemy import Table, Column, Integer, Float, String, BigInteger, DateTime, Boolean, Enum, Text, UniqueConstraint, MetaData
 from sqlalchemy import create_engine
 from sqlalchemy.exc import NoSuchTableError
 from sqlalchemy.orm import sessionmaker
@@ -6,8 +6,10 @@ from sqlalchemy import inspect
 
 import Monstr.Core.Config as Config
 
+
 class Singleton(type):
     _instances = {}
+    
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
             cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
@@ -37,33 +39,40 @@ class DBHandler():
         table.create(checkfirst=True)
         return table
 
-    def getOrCreateTable(self, name, schema):
+    def getOrCreateTable(self, name, schema, defaults=[]):
         iengine = inspect(self.engine)
         db_tables = iengine.get_table_names()
-
+        is_new_table_created = False
         if name not in db_tables:
             print "Table is absent. Making table ...."
             self.makeTable(name, schema)
+            is_new_table_created = True
+
         table = Table(name, self.metadata, autoload=True)
         db_columns = iengine.get_columns(name)
         db_column_names = [c["name"] for c in iengine.get_columns(name)]
-        model_column_names = [c.name for c in schema if c.name!=None]
+        model_column_names = [c.name for c in schema if c.name is not None]
         if set(model_column_names) != set(db_column_names):
             print 'DB do not correspond Schema'
             self.session.close()
             table.drop(self.engine, checkfirst=False)
-            self.engine.dispose() 
+            self.engine.dispose()
             self.initDB()
             print iengine.get_table_names()
             table = self.makeTable(name, schema)
+            is_new_table_created = True
+
+        if defaults != [] and is_new_table_created:
+            print defaults
+            self.bulk_insert(table, defaults)
 
         return table
 
-    def initialize(self, schemas, prefix):
+    def initialize(self, schemas, prefix, defaults=[]):
         tables = {}
         for schema in schemas:
             table_name = prefix + '_' + schema
-            table = self.getOrCreateTable(table_name, schemas[schema])
+            table = self.getOrCreateTable(table_name, schemas[schema], defaults)
             tables[schema] = table
         return tables
 
