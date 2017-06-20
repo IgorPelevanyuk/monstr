@@ -1,6 +1,8 @@
 #!/bin/python
 
 import json
+from pprint import pprint as pp
+
 
 import Monstr.Core.Utils as Utils
 import Monstr.Core.DB as DB
@@ -30,11 +32,11 @@ class SSB(BaseModule.BaseModule):
                               Column('topologymaintenances', Text),
                               Column('ggus', Integer),)}
 
-    status_list = [{'name': 'good_links', 'status': 'UNKNOWN', 'time': Utils.get_UTC_now(), 'description': ''},
-                   {'name': 'site_readiness', 'status': 'UNKNOWN', 'time': Utils.get_UTC_now(), 'description': ''},
-                   {'name': 'sam3_ce', 'status': 'UNKNOWN', 'time': Utils.get_UTC_now(), 'description': ''},
-                   {'name': 'sam3_srm', 'status': 'UNKNOWN', 'time': Utils.get_UTC_now(), 'description': ''},
-                   {'name': 'visible', 'status': 'UNKNOWN', 'time': Utils.get_UTC_now(), 'description': ''}]
+    status_list = [{'name': 'good_links', 'status': 0, 'time': Utils.get_UTC_now(), 'description': ''},
+                   {'name': 'site_readiness', 'status': 0, 'time': Utils.get_UTC_now(), 'description': ''},
+                   {'name': 'sam3_ce', 'status': 0, 'time': Utils.get_UTC_now(), 'description': ''},
+                   {'name': 'sam3_srm', 'status': 0, 'time': Utils.get_UTC_now(), 'description': ''},
+                   {'name': 'visible', 'status': 0, 'time': Utils.get_UTC_now(), 'description': ''}]
 
     DATA_HOSTNAME = "http://dashb-ssb.cern.ch/dashboard/request.py/siteviewjson?view=default"
     COLUMN_NAMES_HOSTNAME = "http://dashb-ssb.cern.ch/dashboard/request.py/getheaders?view=default"
@@ -80,19 +82,19 @@ class SSB(BaseModule.BaseModule):
         current_status = []
         for site in data['main']:
             if 'Disk' not in site['site_name'] and 'Buffer' not in site['site_name']:
-                links_status = 'GOOD' if site['good_links'] == 'OK' else 'WARNING'
+                links_status = 10 if site['good_links'] == 'OK' else 40
                 current_status.append({'name': 'good_links', 'status': links_status, 'description': 'Value is ' + site['good_links']})
 
-                readiness_status = 'GOOD' if site['site_readiness'] == 'Ok' else 'WARNING'
+                readiness_status = 10 if site['site_readiness'] == 'Ok' else 40
                 current_status.append({'name': 'site_readiness', 'status': readiness_status, 'description': 'Value is ' + site['site_readiness']})
 
-                sam3ce_status = 'GOOD' if site['sam3_ce'] == 'OK' else 'WARNING'
+                sam3ce_status = 10 if site['sam3_ce'] == 'OK' else 40
                 current_status.append({'name': 'sam3_ce', 'status': sam3ce_status, 'description': 'Value is ' + site['sam3_ce']})
 
-                sam3_srm = 'GOOD' if site['sam3_srm'] == 'OK' else 'WARNING'
+                sam3_srm = 10 if site['sam3_srm'] == 'OK' else 40
                 current_status.append({'name': 'sam3_srm', 'status': sam3_srm, 'description': 'Value is ' + site['sam3_srm']})
 
-                visible_status = 'GOOD' if site['visible'] == 'OK' else 'WARNING'
+                visible_status = 10 if site['visible'] == 'OK' else 40
                 current_status.append({'name': 'visible', 'status': visible_status, 'description': 'Value is ' + site['visible']})
 
                 conn = self.db_handler.get_engine().connect()
@@ -108,24 +110,18 @@ class SSB(BaseModule.BaseModule):
     def lastStatus(self, incoming_params):
         response = {}
         try:
-            default_params = {'site_name': ''}
+            default_params = {'site_name': 'T1_RU_JINR'}
             params = self._create_params(default_params, incoming_params)
             result = []
 
-            if params['site_name'] == '':
-                query = self.tables['main'].select()
-            # site_name=T1_RU_JINR|T1_RU_JINR_Disk
-            elif len(params['site_name'].split('|')) == 2:
-                site_names = params['site_name'].split('|')
-                query = self.tables['main'].select((self.tables['main'].c.site_name == site_names[0]) |
-                                                   (self.tables['main'].c.site_name == site_names[1]))
-            else:
-                query = self.tables['main'].select(self.tables['main'].c.site_name == params['site_name'])
+            last_row = self.db_handler.get_session().query(DB.func.max(self.tables['main'].c.time).label("max_time")).one()
+            if len(last_row) > 0:
+                query = self.tables['main'].select((self.tables['main'].c.site_name == params['site_name']) & (self.tables['main'].c.time == last_row[0]))
 
-            cursor = query.execute()
-            resultProxy = cursor.fetchall()
-            for row in resultProxy:
-                result.append(dict(row.items()))
+                cursor = query.execute()
+                resultProxy = cursor.fetchall()
+                for row in resultProxy:
+                    result.append(dict(row.items()))
 
             response = {'data': result,
                         'applied_params': params,
@@ -145,6 +141,8 @@ class SSB(BaseModule.BaseModule):
 def main():
     X = SSB()
     X.ExecuteCheck()
+    pp(X.lastStatus({}))
+
 
 if __name__ == '__main__':
     main()

@@ -2,6 +2,7 @@ from sqlalchemy import Table, Column, Integer, Float, String, BigInteger, DateTi
 from sqlalchemy import create_engine
 from sqlalchemy.exc import NoSuchTableError
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.sql import func
 from sqlalchemy import inspect
 
 import Monstr.Core.Config as Config

@@ -30,7 +30,7 @@ class BaseModule():
 
     status_schema = {'status': (DB.Column('id', DB.Integer, primary_key=True),
                      DB.Column('name', DB.String(64)),
-                     DB.Column('status', DB.String(32)),
+                     DB.Column('status', DB.Integer),
                      DB.Column('time', DB.DateTime(True)),
                      DB.Column('description', DB.Text),)}
 
