@@ -7,6 +7,7 @@ from pprint import pprint as pp
 import Monstr.Core.Utils as Utils
 import Monstr.Core.DB as DB
 import Monstr.Core.BaseModule as BaseModule
+import Monstr.Core.Constants as Constants
 
 from Monstr.Core.DB import Column, Integer, String, Text, DateTime
 
@@ -72,36 +73,62 @@ class SSB(BaseModule.BaseModule):
         insert_list = []
         for data in result:
             insert_list.append(result[data])
+        pp(result)
 
         return {'main': insert_list}
 
-    def Analyze(self, data):
+    def _create_event_row(self, name, event_type, time, severity, description):
+        row = {'module': self.name,
+               'name': name,
+               'type': event_type,
+               'time': time,
+               'severity': severity,
+               'description': description}
+        return row
+
+    def update_status(self, new_statuses):
         update_time = Utils.get_UTC_now()
         last_status = [x._asdict() for x in self.db_handler.get_session().query(self.status_table['status']).all()]
+        last_status = dict([(str(x['name']), int(x['status'])) for x in last_status])
+        conn = self.db_handler.get_engine().connect()
+        for status in new_statuses:
+            if last_status[status['name']] != status['status']:
+                pp(type(last_status[status['name']]))
+                pp(type(status['status']))
+                event_name = status['name'] + 'Go' + Constants.STATUS[status['status']]
+                row = self._create_event_row(event_name, 'StatusChange', update_time, status['status'], status['description'])
+                self.db_handler.insert(self.events_table, row)
+                update = self.status_table['status'].update().values(status=status['status'],
+                                                                     time=update_time, 
+                                                                     description=status['description'])
+                                                                        .where(self.status_table['status'].c.name == status['name'])
+                conn.execute(update)
+
+    def Analyze(self, data):
+        last_status = [x._asdict() for x in self.db_handler.get_session().query(self.status_table['status']).all()]
         last_status = dict([(str(x['name']), str(x['status'])) for x in last_status])
-        current_status = []
+        new_statuses = []
+        pp(last_status)
         for site in data['main']:
             if 'Disk' not in site['site_name'] and 'Buffer' not in site['site_name']:
                 links_status = 10 if site['good_links'] == 'OK' else 40
-                current_status.append({'name': 'good_links', 'status': links_status, 'description': 'Value is ' + site['good_links']})
+                new_statuses.append({'name': 'good_links', 'status': links_status, 'description': 'Good Links: is ' + str(site['good_links'])})
 
                 readiness_status = 10 if site['site_readiness'] == 'Ok' else 40
-                current_status.append({'name': 'site_readiness', 'status': readiness_status, 'description': 'Value is ' + site['site_readiness']})
+                if site['site_readiness'] is None:
+                    readiness_status = 0
+                new_statuses.append({'name': 'site_readiness', 'status': readiness_status, 'description': 'Site Readiness: is ' + str(site['site_readiness'])})
 
                 sam3ce_status = 10 if site['sam3_ce'] == 'OK' else 40
-                current_status.append({'name': 'sam3_ce', 'status': sam3ce_status, 'description': 'Value is ' + site['sam3_ce']})
+                new_statuses.append({'name': 'sam3_ce', 'status': sam3ce_status, 'description': 'SAM3 CE: is ' + str(site['sam3_ce'])})
 
                 sam3_srm = 10 if site['sam3_srm'] == 'OK' else 40
-                current_status.append({'name': 'sam3_srm', 'status': sam3_srm, 'description': 'Value is ' + site['sam3_srm']})
+                new_statuses.append({'name': 'sam3_srm', 'status': sam3_srm, 'description': 'SAM3 SRM: is ' + str(site['sam3_srm'])})
 
                 visible_status = 10 if site['visible'] == 'OK' else 40
-                current_status.append({'name': 'visible', 'status': visible_status, 'description': 'Value is ' + site['visible']})
+                new_statuses.append({'name': 'visible', 'status': visible_status, 'description': 'Visible: is ' + str(site['visible'])})
 
-                conn = self.db_handler.get_engine().connect()
-                for status in current_status:
-                    if last_status[status['name']] != status['status']:
-                        update = self.status_table['status'].update().values(status=status['status'], time=update_time, description=status['description']).where(self.status_table['status'].c.name == status['name'])
-                        conn.execute(update)
+                self.update_status(new_statuses)
 
     # ==========================================================================
     #                 Web
@@ -141,8 +168,6 @@ class SSB(BaseModule.BaseModule):
 def main():
     X = SSB()
     X.ExecuteCheck()
-    pp(X.lastStatus({}))
-
 
 if __name__ == '__main__':
     main()

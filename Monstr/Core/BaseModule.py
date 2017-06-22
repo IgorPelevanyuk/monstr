@@ -26,13 +26,14 @@ class BaseModule():
     tables = None
     status_table = None
     status_list = []
+    events_table = None
     db_handler = None
 
     status_schema = {'status': (DB.Column('id', DB.Integer, primary_key=True),
-                     DB.Column('name', DB.String(64)),
-                     DB.Column('status', DB.Integer),
-                     DB.Column('time', DB.DateTime(True)),
-                     DB.Column('description', DB.Text),)}
+                                DB.Column('name', DB.String(64)),
+                                DB.Column('status', DB.Integer),
+                                DB.Column('time', DB.DateTime(True)),
+                                DB.Column('description', DB.Text),)}
 
     journal_schema = (DB.Column('id', DB.Integer, primary_key=True),
                       DB.Column('module', DB.String(64)),
@@ -40,6 +41,14 @@ class BaseModule():
                       DB.Column('result', DB.String(32)),
                       DB.Column('step', DB.String(32)),
                       DB.Column('description', DB.Text),)
+
+    events_schema = (DB.Column('id', DB.BigInteger, primary_key=True),
+                     DB.Column('module', DB.String(64)),
+                     DB.Column('name', DB.String(64)),
+                     DB.Column('type', DB.String(32)),
+                     DB.Column('time', DB.DateTime(True)),
+                     DB.Column('severity', DB.Integer),
+                     DB.Column('description', DB.Text),)
 
     def _create_journal_row(self, result, step=None, error=None):
         row = {'module': self.name,
@@ -91,6 +100,8 @@ class BaseModule():
 
     def ExecuteCheck(self):
         journal = self.db_handler.getOrCreateTable('monstr_Journal', self.journal_schema)
+        self.events_table = self.db_handler.getOrCreateTable('monstr_Events', self.events_schema)
+
         try:
             self.Initialize()
         except Exception as e:
