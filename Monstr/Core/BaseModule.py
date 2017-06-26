@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
 import Monstr.Core.DB as DB
 import Monstr.Core.Utils as Utils
+import Monstr.Core.Constants as Constants
 
 # ,----------------------.
 # |BaseNodule            |
@@ -50,14 +51,57 @@ class BaseModule():
                      DB.Column('severity', DB.Integer),
                      DB.Column('description', DB.Text),)
 
-    def _create_journal_row(self, result, step=None, error=None):
+    # ==========================================================================
+    # Database functions
+    # ==========================================================================
+
+    def _db_incert_journal_row(self, row):
+        self.db_handler.insert(self.journal, row)
+
+    def _db_incert_event_row(self, row):
+        self.db_handler.insert(self.events_table, row)
+
+    def _db_get_status_table_repr(self):
+        return [x._asdict() for x in self.db_handler.get_session().query(self.status_table['status']).all()]
+
+    def _db_update_status(self, statuses):
+        conn = self.db_handler.get_engine().connect()
+        for status in statuses:
+            update = self.status_table['status'].update().values(status=status['status'], time=status['time'], description=status['description']).where(self.status_table['status'].c.name == status['name'])
+            conn.execute(update)
+
+    # ==========================================================================
+    # Common functions
+    # ==========================================================================
+
+    def _create_journal_row(self, result, step=None, description=None):
         row = {'module': self.name,
                'time': Utils.get_UTC_now(),
                'result': result,
                'step': step,
-               'description': (type(error).__name__ + ': ' + error.message) if error is not None else None
-        }
+               'description': description}
         return row
+
+    def write_to_journal(self, result, step=None, description=None):
+        row = self._create_journal_row(result, step, description)
+        self._db_incert_journal_row(row)
+
+    def write_error_to_journal(self, result, step=None, error=None):
+        description = (type(error).__name__ + ': ' + error.message) if error is not None else None
+        self.write_to_journal(result, step, description)
+
+    # --------------------------------------------------------------------------
+
+    def create_event(self, name, event_type, time, severity, description):
+        row = {'module': self.name,
+               'name': name,
+               'type': event_type,
+               'time': time,
+               'severity': severity,
+               'description': description}
+        self._db_incert_event_row(row)
+
+    # --------------------------------------------------------------------------
 
     def _create_params(self, default_params, params):
         result = {}
@@ -67,6 +111,25 @@ class BaseModule():
             else:
                 result[key] = type(default_params[key])(params[key])
         return result
+
+    def get_last_status(self):
+        status_table = self._db_get_status_table_repr()
+        last_status = dict([(str(x['name']), int(x['status'])) for x in status_table])
+        return last_status
+
+    def update_status(self, new_statuses):
+        from pprint import pprint as pp
+        last_status = self.get_last_status()
+        pp(last_status)
+        update_list = []
+        for status in new_statuses:
+            if last_status[status['name']] != status['status']:
+                update_list.append(status)
+                event_name = status['name'] + ':' + Constants.STATUS[last_status[status['name']]] + '->' + Constants.STATUS[status['status']]
+                self.create_event(event_name, 'StatusChange', status['time'], status['status'], status['description'])
+        pp(update_list)
+        self._db_update_status(update_list)
+
 
     rest_links = {}
 
@@ -88,7 +151,7 @@ class BaseModule():
         pass
 
     def Analyze(self, data):
-        pass
+        return []
 
     def React(self, events):
         pass
@@ -99,49 +162,50 @@ class BaseModule():
             self.db_handler.bulk_insert(table, data[schema])
 
     def ExecuteCheck(self):
-        journal = self.db_handler.getOrCreateTable('monstr_Journal', self.journal_schema)
+        self.journal = self.db_handler.getOrCreateTable('monstr_Journal', self.journal_schema)
         self.events_table = self.db_handler.getOrCreateTable('monstr_Events', self.events_schema)
 
         try:
             self.Initialize()
         except Exception as e:
-            row = self._create_journal_row('Fail', 'Initialize', e)
-            self.db_handler.insert(journal, row)
+            self.write_error_to_journal('Fail', 'Initialize', e)
             print e
             return
 
         try:
             params = self.PrepareRetrieve()
         except Exception as e:
-            row = self._create_journal_row('Fail', 'PrepareRetrieve', e)
-            self.db_handler.insert(journal, row)
+            self.write_error_to_journal('Fail', 'PrepareRetrieve', e)
             print e
             return
 
         try:
             data = self.Retrieve(params)
         except Exception as e:
-            row = self._create_journal_row('Fail', 'Retrieve', e)
-            self.db_handler.insert(journal, row)
+            self.write_error_to_journal('Fail', 'Retrieve', e)
             print e
             return
 
         try:
             self.InsertToDB(data)
         except Exception as e:
-            row = self._create_journal_row('Fail', 'InsertToDB', e)
-            self.db_handler.insert(journal, row)
+            self.write_error_to_journal('Fail', 'InsertToDB', e)
             print e
             return
+
+        #try:
+        events = self.Analyze(data)
+        #except Exception as e:
+        #    self.write_error_to_journal('Fail', 'Analyze', e)
+        #    print 'Analyze error'
+        #    print e
+        #    return
 
         try:
-            self.Analyze(data)
+            self.React(data)
         except Exception as e:
-            row = self._create_journal_row('Fail', 'Analyze', e)
-            self.db_handler.insert(journal, row)
+            self.write_error_to_journal('Fail', 'React', e)
             print e
             return
 
-        row = self._create_journal_row('Success')
-        self.db_handler.insert(journal, row)
-        
+        self.write_to_journal('Success')
