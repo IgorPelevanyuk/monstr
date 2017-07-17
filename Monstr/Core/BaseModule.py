@@ -93,13 +93,16 @@ class BaseModule():
     # --------------------------------------------------------------------------
 
     def create_event(self, name, event_type, time, severity, description):
-        row = {'module': self.name,
-               'name': name,
-               'type': event_type,
-               'time': time,
-               'severity': severity,
-               'description': description}
-        self._db_incert_event_row(row)
+        event = {'module': self.name,
+                 'name': name,
+                 'type': event_type,
+                 'time': time,
+                 'severity': severity,
+                 'description': description}
+        return event
+
+    def write_event(self, event):
+        self._db_incert_event_row(event)
 
     # --------------------------------------------------------------------------
 
@@ -117,19 +120,22 @@ class BaseModule():
         last_status = dict([(str(x['name']), int(x['status'])) for x in status_table])
         return last_status
 
-    def update_status(self, new_statuses):
-        from pprint import pprint as pp
+    def update_status(self, current_statuses):
         last_status = self.get_last_status()
-        pp(last_status)
         update_list = []
-        for status in new_statuses:
+        event_list = []
+        for status in current_statuses:
             if last_status[status['name']] != status['status']:
                 update_list.append(status)
+                # Generate event and write to DB
                 event_name = status['name'] + ':' + Constants.STATUS[last_status[status['name']]] + '->' + Constants.STATUS[status['status']]
-                self.create_event(event_name, 'StatusChange', status['time'], status['status'], status['description'])
-        pp(update_list)
+                event = self.create_event(event_name, 'StatusChange', status['time'], status['status'], status['description'])
+                event_list.append(event)
+                self.write_event(event)
         self._db_update_status(update_list)
+        return event_list
 
+    # --------------------------------------------------------------------------
 
     rest_links = {}
 
@@ -160,6 +166,7 @@ class BaseModule():
         for schema in data:
             table = self.tables[schema]
             self.db_handler.bulk_insert(table, data[schema])
+        return
 
     def ExecuteCheck(self):
         self.journal = self.db_handler.getOrCreateTable('monstr_Journal', self.journal_schema)

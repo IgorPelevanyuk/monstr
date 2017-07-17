@@ -97,7 +97,6 @@ class SSB(BaseModule.BaseModule):
                 visible_status = 10 if site['visible'] == 'OK' else 40
                 new_statuses.append({'name': 'visible', 'status': visible_status, 'time': update_time, 'description': 'Visible: is ' + str(site['visible'])})
 
-                pp(new_statuses)
                 self.update_status(new_statuses)
 
     # ==========================================================================
