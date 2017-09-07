@@ -2,6 +2,7 @@
 from datetime import timedelta
 import json
 from sqlalchemy.sql import func
+from pprint import pprint as pp
 
 import Monstr.Core.Utils as Utils
 import Monstr.Core.DB as DB
@@ -17,7 +18,7 @@ class PhedexQuality(BaseModule.BaseModule):
                               Column('direction', String(4)),
                               Column('time', DateTime(True)),
                               Column('site', String(60)),
-                              Column('rate', Integer),
+                              Column('rate', BigInteger),
                               Column('quality', String(10)),
                               Column('done_files', Integer),
                               Column('done_bytes', BigInteger),
@@ -95,9 +96,19 @@ class PhedexQuality(BaseModule.BaseModule):
                                            'expire_files':int(quality[site][time]['expire_files']),
                                            'expire_bytes':int(quality[site][time]['expire_bytes']),
                                           })
+                            if int(quality[site][time]['rate']) > 2147483647:
+                                pp('rate '+ str(quality[site][time]['rate']))
+                            if int(quality[site][time]['done_files']) > 2147483647:
+                                pp('done_files '+ str(quality[site][time]['done_files']))
+                            if int(quality[site][time]['try_files']) > 2147483647:
+                                pp('try_files '+ str(quality[site][time]['try_files']))
+                            if int(quality[site][time]['fail_files']) > 2147483647:
+                                pp('fail_files '+ str(quality[site][time]['fail_files']))
+                            if int(quality[site][time]['expire_files']) > 2147483647:
+                                pp('expire_files '+ str(quality[site][time]['expire_files']))
+
 
             last_time = last_time + timedelta(hours=1)
-
         return {'main': result}
 
     #==========================================================================
