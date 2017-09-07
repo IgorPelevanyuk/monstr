@@ -116,12 +116,11 @@ class BaseModule():
         return result
 
     def get_last_status(self):
-        status_table = self._db_get_status_table_repr()
-        last_status = dict([(str(x['name']), int(x['status'])) for x in status_table])
-        return last_status
+        return self._db_get_status_table_repr()
 
     def update_status(self, current_statuses):
-        last_status = self.get_last_status()
+        previous_status = self._db_get_status_table_repr()
+        last_status = dict([(str(x['name']), int(x['status'])) for x in previous_status])
         update_list = []
         event_list = []
         for status in current_statuses:
