@@ -28,6 +28,9 @@ class BaseModule():
     status_table = None
     status_list = []
     events_table = None
+
+    rest_links = {}
+
     db_handler = None
 
     status_schema = {'status': (DB.Column('id', DB.Integer, primary_key=True),
@@ -136,10 +139,9 @@ class BaseModule():
 
     # --------------------------------------------------------------------------
 
-    rest_links = {}
-
     def __init__(self):
         self.db_handler = DB.DBHandler()
+        self.rest_links = {'getModuleStatus': self.GetModuleStatus}
 
     def Initialize(self):
         if self.name is None:
@@ -215,3 +217,24 @@ class BaseModule():
             return
 
         self.write_to_journal('Success')
+
+    # ==========================================================================
+    #                 Web
+    # ==========================================================================
+
+    def GetModuleStatus(self, incoming_params):
+        response = {}
+        params = incoming_params
+        try:
+            result = self._db_get_status_table_repr()
+            response = {'data': result,
+                        'applied_params': params,
+                        'success': True}
+        except Exception as e:
+            response = {'data': result,
+                        'incoming_params': incoming_params,
+                        'success': False,
+                        'error': type(e).__name__ + ': ' + e.message,
+                        'description': 'Error inside BaseModule.GetModuleStatus'}
+
+        return response

@@ -36,6 +36,7 @@ class PhedexErrors(BaseModule.BaseModule):
     def __init__(self):
         super(PhedexErrors, self).__init__()
         self.db_handler = DB.DBHandler()
+        self.rest_links['lastStatus'] = self.lastStatus
 
     def PrepareRetrieve(self):
         last_row = self.db_handler.get_session().query(func.max(self.tables['main'].c.time_done).label("max_time_done")).one()
@@ -128,7 +129,6 @@ class PhedexErrors(BaseModule.BaseModule):
 
         return response
 
-    rest_links = {'lastStatus': lastStatus}
 
 def main():
     X = PhedexErrors()

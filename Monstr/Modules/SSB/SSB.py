@@ -44,6 +44,7 @@ class SSB(BaseModule.BaseModule):
     def __init__(self):
         super(SSB, self).__init__()
         self.db_handler = DB.DBHandler()
+        self.rest_links['lastStatus'] = self.lastStatus
 
     def Retrieve(self, params):
         retrieve_time = Utils.get_UTC_now().replace(second=0, microsecond=0)
@@ -130,9 +131,6 @@ class SSB(BaseModule.BaseModule):
                         'error': type(e).__name__ + ': ' + e.message}
 
         return response
-
-    rest_links = {'lastStatus': lastStatus}
-
 
 def main():
     X = SSB()

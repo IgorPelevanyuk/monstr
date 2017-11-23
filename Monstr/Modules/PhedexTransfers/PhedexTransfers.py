@@ -44,6 +44,7 @@ class PhedexTransfers(BaseModule.BaseModule):
     def __init__(self):
         super(PhedexTransfers, self).__init__()
         self.db_handler = DB.DBHandler()
+        self.rest_links['lastStatus'] = self.lastStatus
 
     def PrepareRetrieve(self):
         # TODO: Introduce filling of absent hours
@@ -140,8 +141,6 @@ class PhedexTransfers(BaseModule.BaseModule):
                         'error': type(e).__name__ + ': ' + e.message}
 
         return response
-
-    rest_links = {'lastStatus': lastStatus}
 
 
 def main():

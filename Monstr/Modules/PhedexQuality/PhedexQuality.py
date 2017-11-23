@@ -26,8 +26,7 @@ class PhedexQuality(BaseModule.BaseModule):
                               Column('fail_files', Integer),
                               Column('fail_bytes', BigInteger),
                               Column('expire_files', Integer),
-                              Column('expire_bytes', BigInteger),)
-                    }
+                              Column('expire_bytes', BigInteger))}
 
     HOSTNAME = "http://cmsweb.cern.ch"
     REQUEST = "/phedex/datasvc/json/<instance>/transferhistory?starttime=-168h&<direction>=T1_RU_JINR*"
@@ -38,6 +37,7 @@ class PhedexQuality(BaseModule.BaseModule):
     def __init__(self, config=None):
         super(PhedexQuality, self).__init__()
         self.db_handler = DB.DBHandler()
+        self.rest_links['lastStatus'] = self.lastStatus
         self.config = self.default_config
         if config is not None:
             self.config.update(config)
@@ -57,7 +57,7 @@ class PhedexQuality(BaseModule.BaseModule):
 
     def Retrieve(self, params):
         result = []
-        #Get current time and last recorded time
+        # Get current time and last recorded time
         current_time = Utils.get_UTC_now().replace(minute=0, second=0, microsecond=0)
         last_time = None
         last_row = self.db_handler.get_session().query(func.max(self.tables['main'].c.time).label("max_time")).one()
@@ -141,7 +141,6 @@ class PhedexQuality(BaseModule.BaseModule):
 
         return response
 
-    rest_links = {'lastStatus': lastStatus}
 
 def main():
     X = PhedexQuality()

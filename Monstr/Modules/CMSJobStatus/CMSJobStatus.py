@@ -40,6 +40,7 @@ class CMSJobStatus(BaseModule.BaseModule):
     def __init__(self, config=None):
         super(CMSJobStatus, self).__init__()
         self.db_handler = DB.DBHandler()
+        self.rest_links['lastStatus'] = self.lastStatus
         self.config = self.default_config
         if config is not None:
             self.config.update(config)
@@ -151,6 +152,7 @@ class CMSJobStatus(BaseModule.BaseModule):
         load = site_failed + app_succeeded
 
         sorted_list = list(reversed(sorted([site_info[site]for site in site_info], key=lambda x: x['app_succeeded'])))
+        print sorted_list
         for i in range(0, len(sorted_list)):
             if sorted_list[i]['site_name'] == 'T1_RU_JINR':
                 rank = i
@@ -180,11 +182,11 @@ class CMSJobStatus(BaseModule.BaseModule):
                 resultProxy = cursor.fetchall()
                 for row in resultProxy:
                     result.append(dict(row.items()))
-            response = {'data': result, 
+            response = {'data': result,
                         'applied_params': params,
                         'success': True}
         except Exception as e:
-            response = {'data': result, 
+            response = {'data': result,
                         'incoming_params': incoming_params,
                         'default_params': [[key, default_params[key], type(default_params[key])] for key in default_params],
                         'success': False,
@@ -192,7 +194,6 @@ class CMSJobStatus(BaseModule.BaseModule):
 
         return response
 
-    rest_links = {'lastStatus': lastStatus}
 
 def main():
     X = CMSJobStatus()
