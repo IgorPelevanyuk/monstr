@@ -134,11 +134,11 @@ class CMSJobStatus(BaseModule.BaseModule):
                 1000 >= load: 50}[True]
 
     def _get_rank_status(self, rank):
-        return {rank < 2: 10,
-                2 <= rank < 3: 20,
-                3 <= rank < 4: 30,
-                4 <= rank < 6: 40,
-                6 <= rank: 50}[True]
+        return {rank < 4: 10,
+                4 <= rank < 5: 20,
+                5 <= rank < 6: 30,
+                6 <= rank < 7: 40,
+                7 <= rank: 50}[True]
 
     def Analyze(self, data):
         new_statuses = []
@@ -153,9 +153,10 @@ class CMSJobStatus(BaseModule.BaseModule):
 
         sorted_list = list(reversed(sorted([site_info[site]for site in site_info], key=lambda x: x['app_succeeded'])))
         print sorted_list
-        for i in range(0, len(sorted_list)):
-            if sorted_list[i]['site_name'] == 'T1_RU_JINR':
-                rank = i
+        rank = [x['site_name'] for x in sorted_list].index('T1_RU_JINR') + 1
+        # for i in range(0, len(sorted_list)):
+        #     if sorted_list[i]['site_name'] == 'T1_RU_JINR':
+        #         rank = i + 1 
 
         new_statuses.append({'name': 'load', 'status': self._get_load_status(load), 'time': update_time, 'description': 'Load: is ' + str(load)})
         new_statuses.append({'name': 'rank', 'status': self._get_rank_status(rank), 'time': update_time, 'description': 'Rank: is ' + str(rank)})
