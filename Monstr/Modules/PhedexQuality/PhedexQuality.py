@@ -1,8 +1,8 @@
 #!/bin/python
 from datetime import timedelta
 import json
-from sqlalchemy.sql import func
 from pprint import pprint as pp
+from sqlalchemy.sql import func
 
 import Monstr.Core.Utils as Utils
 import Monstr.Core.DB as DB
@@ -10,6 +10,7 @@ import Monstr.Core.BaseModule as BaseModule
 from Monstr.Core.DB import Column, Integer, String, DateTime, BigInteger
 
 import pytz
+
 
 class PhedexQuality(BaseModule.BaseModule):
     name = 'PhedexQuality'
@@ -70,7 +71,6 @@ class PhedexQuality(BaseModule.BaseModule):
 
         # Gather all data hour by hour
         while last_time < current_time:
-
             for instance in ['prod', 'debug']:
                 for direction in ['from', 'to']:
                     quality_url = Utils.build_URL(self.HOSTNAME + self.REQUEST, {'instance': instance, 'direction': direction})
@@ -93,27 +93,25 @@ class PhedexQuality(BaseModule.BaseModule):
                                            'try_bytes': int(quality[site][time]['try_bytes']),
                                            'fail_files': int(quality[site][time]['fail_files']),
                                            'fail_bytes': int(quality[site][time]['fail_bytes']),
-                                           'expire_files':int(quality[site][time]['expire_files']),
-                                           'expire_bytes':int(quality[site][time]['expire_bytes']),
-                                          })
+                                           'expire_files': int(quality[site][time]['expire_files']),
+                                           'expire_bytes': int(quality[site][time]['expire_bytes'])})
                             if int(quality[site][time]['rate']) > 2147483647:
-                                pp('rate '+ str(quality[site][time]['rate']))
+                                pp('rate ' + str(quality[site][time]['rate']))
                             if int(quality[site][time]['done_files']) > 2147483647:
-                                pp('done_files '+ str(quality[site][time]['done_files']))
+                                pp('done_files ' + str(quality[site][time]['done_files']))
                             if int(quality[site][time]['try_files']) > 2147483647:
-                                pp('try_files '+ str(quality[site][time]['try_files']))
+                                pp('try_files ' + str(quality[site][time]['try_files']))
                             if int(quality[site][time]['fail_files']) > 2147483647:
-                                pp('fail_files '+ str(quality[site][time]['fail_files']))
+                                pp('fail_files ' + str(quality[site][time]['fail_files']))
                             if int(quality[site][time]['expire_files']) > 2147483647:
-                                pp('expire_files '+ str(quality[site][time]['expire_files']))
-
+                                pp('expire_files ' + str(quality[site][time]['expire_files']))
 
             last_time = last_time + timedelta(hours=1)
         return {'main': result}
 
-    #==========================================================================
+    # ==========================================================================
     #                 Web
-    #==========================================================================
+    # ==========================================================================
 
     def lastStatus(self, incoming_params):
         response = {}
@@ -124,7 +122,7 @@ class PhedexQuality(BaseModule.BaseModule):
             max_time = self.db_handler.get_session().query(func.max(self.tables['main'].c.time).label("max_time")).one()
             if max_time[0]:
                 max_time = max_time[0]
-                query = self.tables['main'].select((self.tables['main'].c.time > max_time - timedelta(hours=params['delta']))&(self.tables['main'].c.instance == params['instance'])&(self.tables['main'].c.direction == params['direction']))
+                query = self.tables['main'].select((self.tables['main'].c.time > max_time - timedelta(hours=params['delta'])) & (self.tables['main'].c.instance == params['instance'])&(self.tables['main'].c.direction == params['direction']))
                 cursor = query.execute()
                 resultProxy = cursor.fetchall()
                 for row in resultProxy:
