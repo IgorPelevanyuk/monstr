@@ -231,7 +231,7 @@ class BaseModule():
                         'applied_params': params,
                         'success': True}
         except Exception as e:
-            response = {'data': result,
+            response = {'data': {},
                         'incoming_params': incoming_params,
                         'success': False,
                         'error': type(e).__name__ + ': ' + e.message,
