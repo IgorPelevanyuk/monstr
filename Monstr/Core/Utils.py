@@ -1,17 +1,15 @@
 import datetime
 import pytz
-import urllib
+import urllib2
 import ssl
 
 def get_page(url):
     """Return html code from cmsweb.cern.ch of the page with the given url"""
     print "HTTP access: ", url
     try:
-        socket_obj = urllib.urlopen(url)
+        socket_obj = urllib2.urlopen(url)
     except Exception, e:
-        print e
-        context = ssl._create_unverified_context()
-        socket_obj = urllib.urlopen(url, context=context)
+        socket_obj = urllib2.urlopen(url, context=ssl._create_unverified_context())
     page = socket_obj.read()
     socket_obj.close()
     return page
