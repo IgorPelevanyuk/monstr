@@ -29,6 +29,33 @@ class PhedexQuality(BaseModule.BaseModule):
                               Column('expire_files', Integer),
                               Column('expire_bytes', BigInteger))}
 
+    status_list = [
+                   # Debug To
+                   {'name': 'DebugToAll', 'status': 0, 'time': Utils.get_UTC_now(), 'description': ''},
+                   {'name': 'DebugToT0', 'status': 0, 'time': Utils.get_UTC_now(), 'description': ''},
+                   {'name': 'DebugToT1', 'status': 0, 'time': Utils.get_UTC_now(), 'description': ''},
+                   {'name': 'DebugToJINR', 'status': 0, 'time': Utils.get_UTC_now(), 'description': ''},
+                   {'name': 'DebugToOther', 'status': 0, 'time': Utils.get_UTC_now(), 'description': ''},
+                   # Debug From
+                   {'name': 'DebugFromAll', 'status': 0, 'time': Utils.get_UTC_now(), 'description': ''},
+                   {'name': 'DebugFromT0', 'status': 0, 'time': Utils.get_UTC_now(), 'description': ''},
+                   {'name': 'DebugFromT1', 'status': 0, 'time': Utils.get_UTC_now(), 'description': ''},
+                   {'name': 'DebugFromJINR', 'status': 0, 'time': Utils.get_UTC_now(), 'description': ''},
+                   {'name': 'DebugFromOther', 'status': 0, 'time': Utils.get_UTC_now(), 'description': ''},
+                   # Prod To
+                   {'name': 'ProdToAll', 'status': 0, 'time': Utils.get_UTC_now(), 'description': ''},
+                   {'name': 'ProdToT0', 'status': 0, 'time': Utils.get_UTC_now(), 'description': ''},
+                   {'name': 'ProdToT1', 'status': 0, 'time': Utils.get_UTC_now(), 'description': ''},
+                   {'name': 'ProdToJINR', 'status': 0, 'time': Utils.get_UTC_now(), 'description': ''},
+                   {'name': 'ProdToOther', 'status': 0, 'time': Utils.get_UTC_now(), 'description': ''},
+                   # Prod From
+                   {'name': 'ProdFromAll', 'status': 0, 'time': Utils.get_UTC_now(), 'description': ''},
+                   {'name': 'ProdFromT0', 'status': 0, 'time': Utils.get_UTC_now(), 'description': ''},
+                   {'name': 'ProdFromT1', 'status': 0, 'time': Utils.get_UTC_now(), 'description': ''},
+                   {'name': 'ProdFromJINR', 'status': 0, 'time': Utils.get_UTC_now(), 'description': ''},
+                   {'name': 'ProdFromOther', 'status': 0, 'time': Utils.get_UTC_now(), 'description': ''},
+                   ]
+
     HOSTNAME = "http://cmsweb.cern.ch"
     REQUEST = "/phedex/datasvc/json/<instance>/transferhistory?starttime=-168h&<direction>=T1_RU_JINR*"
 
@@ -108,6 +135,55 @@ class PhedexQuality(BaseModule.BaseModule):
 
             last_time = last_time + timedelta(hours=1)
         return {'main': result}
+
+    # --------------------------------------------------------------------------
+    # Analyzis
+    # --------------------------------------------------------------------------
+    def _get_quality_status(self, quality):
+        return {quality < 0.20: 50,
+                0.2 <= quality < 0.6: 40,
+                0.6 <= quality < 0.8: 30,
+                0.8 <= quality < 0.9: 20,
+                0.9 <= quality: 10}[True]
+
+    def _get_data_from_db(self, instance, direction, site_substr, period=8):
+        max_time = self.db_handler.get_session().query(func.max(self.tables['main'].c.time).label("max_time")).one()
+        if max_time[0]:
+            max_time = max_time[0]
+            query = 0
+            query = self.tables['main'].select((self.tables['main'].c.time > max_time - timedelta(hours=period)) &
+                                               (self.tables['main'].c.instance == instance) &
+                                               (self.tables['main'].c.direction == direction) &
+                                               (self.tables['main'].c.site.contains(site_substr)))
+            cursor = query.execute()
+            resultProxy = cursor.fetchall()
+            links = {}
+            for row in resultProxy:
+                link = dict(row.items())
+                if link['site'] in links:
+                    links[link['site']][link['time']] = link
+                else:
+                    links[link['site']] = {link['time']: link}
+        return links
+
+    def Analyze(self, data):
+        new_statuses = []
+        translation = {'T2': 'Other',
+                       '_': 'All'}
+        update_time = Utils.get_UTC_now()
+        for instance in ['debug', 'prod']:
+            for direction in ['from', 'to']:
+                for site_substr in ['T0', 'T1', 'JINR', 'T2', '_']:
+                    data_selection = self._get_data_from_db(instance, direction, site_substr)
+                    qualities = [float(data_selection[site][time]['quality']) for site in data_selection for time in data_selection[site]]
+                    quality = sum(qualities)/len(qualities)
+                    site_name = translation[site_substr] if site_substr in translation else site_substr
+
+                    status_name = instance.capitalize() + direction.capitalize() + site_name
+                    new_statuses.append({'name': status_name, 'status': self._get_quality_status(quality), 'time': update_time, 'description': 'Quality is ' + str(quality)})
+
+        print new_statuses
+        self.update_status(new_statuses)
 
     # ==========================================================================
     #                 Web

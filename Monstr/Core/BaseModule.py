@@ -150,6 +150,8 @@ class BaseModule():
             raise "Module require schemas list"
         self.tables = self.db_handler.initialize(self.table_schemas, self.name)
         self.status_table = self.db_handler.initialize(self.status_schema, self.name, self.status_list)
+        self.journal = self.db_handler.getOrCreateTable('monstr_Journal', self.journal_schema)
+        self.events_table = self.db_handler.getOrCreateTable('monstr_Events', self.events_schema)
 
     def PrepareRetrieve(self):
         return {}
