@@ -106,31 +106,32 @@ class SSB(BaseModule.BaseModule):
 
     def lastStatus(self, incoming_params):
         response = {}
-        try:
-            default_params = {'site_name': 'T1_RU_JINR'}
-            params = self._create_params(default_params, incoming_params)
-            result = []
+        # try:
+        default_params = {'site_name': 'T1_RU_JINR'}
+        params = self._create_params(default_params, incoming_params)
+        result = []
 
-            last_row = self.db_handler.get_session().query(DB.func.max(self.tables['main'].c.time).label("max_time")).one()
-            if len(last_row) > 0:
-                query = self.tables['main'].select((self.tables['main'].c.site_name == params['site_name']) & (self.tables['main'].c.time == last_row[0]))
+        last_row = self.db_handler.get_session().query(DB.func.max(self.tables['main'].c.time).label("max_time")).one()
+        if len(last_row) > 0:
+            query = self.tables['main'].select((self.tables['main'].c.site_name == params['site_name']) & (self.tables['main'].c.time == last_row[0]))
 
-                cursor = query.execute()
-                resultProxy = cursor.fetchall()
-                for row in resultProxy:
-                    result.append(dict(row.items()))
+            cursor = query.execute()
+            resultProxy = cursor.fetchall()
+            for row in resultProxy:
+                result.append(dict(row.items()))
 
-            response = {'data': result,
-                        'applied_params': params,
-                        'success': True}
-        except Exception as e:
-            response = {'data': result,
-                        'incoming_params': incoming_params,
-                        'default_params': [[key, default_params[key], type(default_params[key])] for key in default_params],
-                        'success': False,
-                        'error': type(e).__name__ + ': ' + e.message}
+        response = {'data': result,
+                    'applied_params': params,
+                    'success': True}
+        # except Exception as e:
+            # response = {'data': result,
+            #             'incoming_params': incoming_params,
+            #             'default_params': [[key, default_params[key], type(default_params[key])] for key in default_params],
+            #             'success': False,
+            #             'error': type(e).__name__ + ': ' + e.message}
 
         return response
+
 
 def main():
     X = SSB()
