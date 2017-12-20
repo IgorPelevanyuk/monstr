@@ -38,6 +38,12 @@ class SSB(BaseModule.BaseModule):
                    {'name': 'sam3_srm', 'status': 0, 'time': Utils.get_UTC_now(), 'description': ''},
                    {'name': 'visible', 'status': 0, 'time': Utils.get_UTC_now(), 'description': ''}]
 
+    status_schema = {'status': (DB.Column('id', DB.Integer, primary_key=True),
+                                DB.Column('name', DB.String(64)),
+                                DB.Column('status', DB.Integer),
+                                DB.Column('time', DB.DateTime(True)),
+                                DB.Column('description', DB.Text),)}
+
     DATA_HOSTNAME = "http://dashb-ssb.cern.ch/dashboard/request.py/siteviewjson?view=default"
     COLUMN_NAMES_HOSTNAME = "http://dashb-ssb.cern.ch/dashboard/request.py/getheaders?view=default"
 
@@ -45,14 +51,6 @@ class SSB(BaseModule.BaseModule):
         super(SSB, self).__init__()
         self.db_handler = DB.DBHandler()
         self.rest_links['lastStatus'] = self.lastStatus
-
-    def Initialize(self):
-        if self.name is None:
-            raise "Module require name"
-        if self.table_schemas is None:
-            raise "Module require schemas list"
-        self.tables = self.db_handler.initialize(self.table_schemas, self.name)
-        self.status_table = self.db_handler.initialize(self.status_schema, self.name, self.status_list)
 
     def Retrieve(self, params):
         retrieve_time = Utils.get_UTC_now().replace(second=0, microsecond=0)
