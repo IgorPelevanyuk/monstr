@@ -172,9 +172,6 @@ class BaseModule():
         return
 
     def ExecuteCheck(self):
-        self.journal = self.db_handler.getOrCreateTable('monstr_Journal', self.journal_schema)
-        self.events_table = self.db_handler.getOrCreateTable('monstr_Events', self.events_schema)
-
         try:
             self.Initialize()
         except Exception as e:
