@@ -1,14 +1,4 @@
-def test_SSB_initial():
-    import Monstr.Modules.SSB.SSB as SSB
-    SSB.main()
-
-
-def test_SSB_additional():
-    import Monstr.Modules.SSB.SSB as SSB
-    SSB.main()
-
-
-def test_SSB_manual():
+def SSB_Manual():
     from Monstr.Modules.SSB.SSB import SSB, DB
     test_obj = SSB()
     test_obj.status_schema = {'status': (DB.Column('id', DB.Integer, primary_key=True),
@@ -23,6 +13,24 @@ def test_SSB_manual():
     test_obj.InsertToDB(data)
     events = test_obj.Analyze(data)
     test_obj.React(data)
+
+
+def test_SSB_initial():
+    import Monstr.Modules.SSB.SSB as SSB
+    SSB.main()
+
+
+def test_SSB_additional():
+    import Monstr.Modules.SSB.SSB as SSB
+    SSB.main()
+
+
+def test_SSB_manual():
+    SSB_Manual()
+
+
+def test_SSB_manual_update():
+    SSB_Manual()
 
 
 def test_RESTs():
