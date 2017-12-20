@@ -46,6 +46,14 @@ class SSB(BaseModule.BaseModule):
         self.db_handler = DB.DBHandler()
         self.rest_links['lastStatus'] = self.lastStatus
 
+    def Initialize(self):
+        if self.name is None:
+            raise "Module require name"
+        if self.table_schemas is None:
+            raise "Module require schemas list"
+        self.tables = self.db_handler.initialize(self.table_schemas, self.name)
+        self.status_table = self.db_handler.initialize(self.status_schema, self.name, self.status_list)
+
     def Retrieve(self, params):
         retrieve_time = Utils.get_UTC_now().replace(second=0, microsecond=0)
         result = {'T1_RU_JINR': {}, 'T1_RU_JINR_Buffer': {}, 'T1_RU_JINR_Disk': {}}
