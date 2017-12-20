@@ -2,13 +2,13 @@ from Monstr.Core import Runner
 
 
 def test_SSB_initial():
-    import Monstr.Modules.SSB.SSB as testedModule
-    testedModule.main()
+    import Monstr.Modules.SSB.SSB as SSB
+    SSB.main()
 
 
 def test_SSB_additional():
-    import Monstr.Modules.SSB.SSB as testedModule
-    testedModule.main()
+    import Monstr.Modules.SSB.SSB as SSB
+    SSB.main()
 
 
 def test_SSB_manual():
