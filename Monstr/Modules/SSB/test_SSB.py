@@ -9,13 +9,13 @@ def test_SSB_additional():
 
 
 def test_SSB_manual():
-    from Monstr.Modules.SSB.SSB import SSB
+    from Monstr.Modules.SSB.SSB import SSB, DB
     test_obj = SSB()
-    test_obj.status_schema = {'status': (SSB.DB.Column('id', SSB.DB.Integer, primary_key=True),
-                                         SSB.DB.Column('name', SSB.DB.String(64)),
-                                         SSB.DB.Column('status', SSB.DB.Integer),
-                                         SSB.DB.Column('time', SSB.DB.DateTime(True)),
-                                         SSB.DB.Column('description', SSB.DB.Text),)}
+    test_obj.status_schema = {'status': (DB.Column('id', DB.Integer, primary_key=True),
+                                         DB.Column('name', DB.String(64)),
+                                         DB.Column('status', DB.Integer),
+                                         DB.Column('time', DB.DateTime(True)),
+                                         DB.Column('description', DB.Text),)}
 
     test_obj.Initialize()
     params = test_obj.PrepareRetrieve()
