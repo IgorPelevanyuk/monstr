@@ -38,12 +38,6 @@ class SSB(BaseModule.BaseModule):
                    {'name': 'sam3_srm', 'status': 0, 'time': Utils.get_UTC_now(), 'description': ''},
                    {'name': 'visible', 'status': 0, 'time': Utils.get_UTC_now(), 'description': ''}]
 
-    status_schema = {'status': (DB.Column('id', DB.Integer, primary_key=True),
-                                DB.Column('name', DB.String(64)),
-                                DB.Column('status', DB.Integer),
-                                DB.Column('time', DB.DateTime(True)),
-                                DB.Column('description', DB.Text),)}
-
     DATA_HOSTNAME = "http://dashb-ssb.cern.ch/dashboard/request.py/siteviewjson?view=default"
     COLUMN_NAMES_HOSTNAME = "http://dashb-ssb.cern.ch/dashboard/request.py/getheaders?view=default"
 
