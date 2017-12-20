@@ -1,6 +1,3 @@
-from Monstr.Core import Runner
-
-
 def test_SSB_initial():
     import Monstr.Modules.SSB.SSB as SSB
     SSB.main()
