@@ -1,11 +1,13 @@
 from Monstr.Core import Runner
 
 
+# def test_PhedexErrors_initial():
+#     modules = Runner.get_modules()
+#     modules['PhedexErrors'].main()
+
 def test_PhedexErrors_initial():
-    modules = Runner.get_modules()
-    assert 'PhedexErrors' in modules
-    if 'PhedexErrors' in modules:
-        modules['PhedexErrors'].main()
+    import Monstr.Modules.PhedexErrors.PhedexErrors as PhedexErrors
+    PhedexErrors.main()
 
 
 def test_RESTs():
