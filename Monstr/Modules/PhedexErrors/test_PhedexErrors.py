@@ -1,6 +1,12 @@
 def PhedexErrors_Manual():
-    from Monstr.Modules.PhedexErrors.PhedexErrors import PhedexErrors
+    from Monstr.Modules.PhedexErrors.PhedexErrors import PhedexErrors, DB
     test_obj = PhedexErrors()
+    # This workaround is required for TravisCI only.
+    test_obj.status_schema = {'status': (DB.Column('id', DB.Integer, primary_key=True),
+                                         DB.Column('name', DB.String(64)),
+                                         DB.Column('status', DB.Integer),
+                                         DB.Column('time', DB.DateTime(True)),
+                                         DB.Column('description', DB.Text),)}
     test_obj.Initialize()
     params = test_obj.PrepareRetrieve()
     data = test_obj.Retrieve(params)

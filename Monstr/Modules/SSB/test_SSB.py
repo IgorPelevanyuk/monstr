@@ -1,6 +1,7 @@
 def SSB_Manual():
     from Monstr.Modules.SSB.SSB import SSB, DB
     test_obj = SSB()
+    # This workaround is required for TravisCI only.
     test_obj.status_schema = {'status': (DB.Column('id', DB.Integer, primary_key=True),
                                          DB.Column('name', DB.String(64)),
                                          DB.Column('status', DB.Integer),
