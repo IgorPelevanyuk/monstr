@@ -1,9 +1,13 @@
-from Monstr.Core import Runner
+def PhedexErrors_Manual():
+    from Monstr.Modules.PhedexErrors.PhedexErrors import PhedexErrors
+    test_obj = PhedexErrors()
+    test_obj.Initialize()
+    params = test_obj.PrepareRetrieve()
+    data = test_obj.Retrieve(params)
+    test_obj.InsertToDB(data)
+    events = test_obj.Analyze(data)
+    test_obj.React(data)
 
-
-# def test_PhedexErrors_initial():
-#     modules = Runner.get_modules()
-#     modules['PhedexErrors'].main()
 
 def test_PhedexErrors_initial():
     import Monstr.Modules.PhedexErrors.PhedexErrors as PhedexErrors
