@@ -176,11 +176,12 @@ class PhedexQuality(BaseModule.BaseModule):
                 for site_substr in ['T0', 'T1', 'JINR', 'T2', '_']:
                     data_selection = self._get_data_from_db(instance, direction, site_substr)
                     qualities = [float(data_selection[site][time]['quality']) for site in data_selection for time in data_selection[site]]
-                    quality = sum(qualities)/len(qualities)
-                    site_name = translation[site_substr] if site_substr in translation else site_substr
+                    if len(qualities) != 0:
+                        quality = sum(qualities)/len(qualities)
+                        site_name = translation[site_substr] if site_substr in translation else site_substr
 
-                    status_name = instance.capitalize() + direction.capitalize() + site_name
-                    new_statuses.append({'name': status_name, 'status': self._get_quality_status(quality), 'time': update_time, 'description': 'Quality is ' + str(quality)})
+                        status_name = instance.capitalize() + direction.capitalize() + site_name
+                        new_statuses.append({'name': status_name, 'status': self._get_quality_status(quality), 'time': update_time, 'description': 'Quality is ' + str(quality)})
 
         print new_statuses
         self.update_status(new_statuses)
