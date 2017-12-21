@@ -7,6 +7,7 @@ def PhedexErrors_Manual():
                                          DB.Column('status', DB.Integer),
                                          DB.Column('time', DB.DateTime(True)),
                                          DB.Column('description', DB.Text),)}
+
     test_obj.Initialize()
     params = test_obj.PrepareRetrieve()
     data = test_obj.Retrieve(params)
@@ -19,8 +20,13 @@ def test_PhedexErrors_initial():
     PhedexErrors_Manual()
 
 
+def test_PhedexErrors_update():
+    PhedexErrors_Manual()
+
+
 def test_RESTs():
     from Monstr.Modules.PhedexErrors.PhedexErrors import PhedexErrors
     obj = PhedexErrors()
+    obj.Initialize()
     for rest_name in obj.rest_links:
         obj.rest_links[rest_name]({})
