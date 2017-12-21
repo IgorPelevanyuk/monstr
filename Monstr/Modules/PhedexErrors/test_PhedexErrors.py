@@ -10,8 +10,7 @@ def PhedexErrors_Manual():
 
 
 def test_PhedexErrors_initial():
-    import Monstr.Modules.PhedexErrors.PhedexErrors as PhedexErrors
-    PhedexErrors.main()
+    PhedexErrors_Manual()
 
 
 def test_RESTs():
