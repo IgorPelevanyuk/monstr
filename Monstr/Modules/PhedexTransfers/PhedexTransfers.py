@@ -11,11 +11,8 @@ from Monstr.Core.DB import Column, BigInteger, Integer, String, DateTime
 import pytz
 
 
-
-
 class PhedexTransfers(BaseModule.BaseModule):
     name = 'PhedexTransfers'
-    #table_schemas = {'main': (Column('id', Integer, primary_key=True),
     table_schemas = {'main': (Column('instance', String(10), primary_key=True),
                               Column('to', String(40), primary_key=True),
                               Column('from', String(40), primary_key=True),
@@ -28,9 +25,8 @@ class PhedexTransfers(BaseModule.BaseModule):
                               Column('fail_files', Integer),
                               Column('fail_bytes', BigInteger),
                               Column('time', DateTime(True), primary_key=True),
-                              Column('binwidth', Integer))
-                             #rate: done_bytes/binwidth(3600)
-                    }
+                              Column('binwidth', Integer))}
+    # rate: done_bytes/binwidth(3600)
 
     config = {'site': 'T1_RU_JINR',
               'binwidth': 600}
@@ -91,8 +87,7 @@ class PhedexTransfers(BaseModule.BaseModule):
                                     'fail_files': details['fail_files'],
                                     'fail_bytes': details['fail_bytes'],
                                     'time': endtime - timedelta(seconds=binwidth),
-                                    'binwidth': binwidth,
-                                   }
+                                    'binwidth': binwidth}
                         if self.config['site'] in link['to'] and self.config['site'] in link['from']:
                             cross_data.append(transfer)
                         else:
@@ -112,9 +107,12 @@ class PhedexTransfers(BaseModule.BaseModule):
             d.execute()
             self.db_handler.bulk_insert(table, data[schema])
 
-    #==========================================================================
+    def Analyze(self, data):
+        pass
+
+    # ==========================================================================
     #                 Web
-    #==========================================================================
+    # ==========================================================================
 
     def lastStatus(self, incoming_params):
         response = {}
@@ -145,7 +143,7 @@ class PhedexTransfers(BaseModule.BaseModule):
 
 def main():
     X = PhedexTransfers()
-    #pp(X.Retrieve({'horizon': Utils.get_UTC_now().replace(minute=0, second=0, microsecond=0) - timedelta(hours=1)}))
+    # pp(X.Retrieve({'horizon': Utils.get_UTC_now().replace(minute=0, second=0, microsecond=0) - timedelta(hours=1)}))
     X.ExecuteCheck()
 
 if __name__ == '__main__':
