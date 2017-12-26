@@ -62,7 +62,7 @@ class SSB(BaseModule.BaseModule):
         json_obj = json.loads(json_raw)['aaData']
 
         for data in json_obj:
-            site_name = data[0][2:]
+            site_name = data[0].split('|')[2]
             if site_name in result:
                 for index in column_names:
                     value = str(data[index].split('|')[2])
@@ -89,10 +89,10 @@ class SSB(BaseModule.BaseModule):
                     readiness_status = 0
                 new_statuses.append({'name': 'site_readiness', 'status': readiness_status, 'time': update_time, 'description': 'Site Readiness: is ' + str(site['site_readiness'])})
 
-                sam3ce_status = 10 if site['sam3_ce'] == 'OK' else 40
+                sam3ce_status = 10 if site['sam3_ce'] == 'OK' else 30 if site['sam3_ce'] == 'DOWNTIME' else 40
                 new_statuses.append({'name': 'sam3_ce', 'status': sam3ce_status, 'time': update_time, 'description': 'SAM3 CE: is ' + str(site['sam3_ce'])})
 
-                sam3_srm = 10 if site['sam3_srm'] == 'OK' else 40
+                sam3_srm = 10 if site['sam3_srm'] == 'OK' else 30 if site['sam3_srm'] == 'DOWNTIME' else 40
                 new_statuses.append({'name': 'sam3_srm', 'status': sam3_srm, 'time': update_time, 'description': 'SAM3 SRM: is ' + str(site['sam3_srm'])})
 
                 visible_status = 10 if site['visible'] == 'OK' else 40
