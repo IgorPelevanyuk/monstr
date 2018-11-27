@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
 import Monstr.Core.DB as DB
 import Monstr.Core.Utils as Utils
+import Monstr.Core.Config as Config
 import Monstr.Core.Constants as Constants
 
 # ,----------------------.
@@ -54,6 +55,8 @@ class BaseModule():
                      DB.Column('time', DB.DateTime(True)),
                      DB.Column('severity', DB.Integer),
                      DB.Column('description', DB.Text),)
+
+    responsibles = ['gavelock@gmail.com']
 
     # ==========================================================================
     # Database functions
@@ -119,22 +122,47 @@ class BaseModule():
                 result[key] = type(default_params[key])(params[key])
         return result
 
+    def get_status_from_status_code(self, code):
+        if code in Constants.STATUS:
+            return Constants.STATUS[code]
+        return 'Undefined' + str(code)
+
     def get_last_status(self):
         return self._db_get_status_table_repr()
 
     def update_status(self, current_statuses):
         previous_status = self._db_get_status_table_repr()
-        last_status = dict([(str(x['name']), int(x['status'])) for x in previous_status])
+        last_statuses = dict([(str(x['name']), {'name':str(x['name']), 'status':int(x['status']), 'time':str(x['time'])}) for x in previous_status])
         update_list = []
         event_list = []
         for status in current_statuses:
-            if last_status[status['name']] != status['status']:
+            last_status = last_statuses[status['name']]
+            if last_status['status'] != status['status']:
                 update_list.append(status)
                 # Generate event and write to DB
-                event_name = status['name'] + ':' + Constants.STATUS[last_status[status['name']]] + '->' + Constants.STATUS[status['status']]
+                last_status_name = self.get_status_from_status_code(last_status['status'])
+                new_status_name = self.get_status_from_status_code(status['status'])
+                event_name = status['name'] + ':' + last_status_name + '->' + new_status_name
                 event = self.create_event(event_name, 'StatusChange', status['time'], status['status'], status['description'])
                 event_list.append(event)
                 self.write_event(event)
+
+                #Send message if necessary
+                email_conf = Config.get_section('Email')
+                threshold = int(email_conf['threshold'])
+                recipients = email_conf['recipients'].split(',')
+
+                if last_status['status'] >= threshold or status['status'] >= threshold:
+                    subject = self.name + ':' + status['name'] + ' goes ' + self.get_status_from_status_code(status['status'])
+                    message = """
+                        For %s:%s the status change occured:
+                        last status was %s, since %s
+                        new status is %s, since %s
+                    """ % (self.name, status['name'],
+                           self.get_status_from_status_code(last_status['status']), str(last_status['time']),
+                           self.get_status_from_status_code(status['status']), str(status['time']),
+                          )
+                    Utils.send_email(subject, message, recipients)
         self._db_update_status(update_list)
         return event_list
 

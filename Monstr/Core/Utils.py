@@ -1,7 +1,11 @@
 import datetime
-import pytz
 import urllib2
 import ssl
+import smtplib
+from email.mime.text import MIMEText
+import pytz
+
+import Monstr.Core.Config as Config
 
 def get_page(url):
     """Return html code from cmsweb.cern.ch of the page with the given url"""
@@ -35,3 +39,24 @@ def build_URL(baseURL, params):
     for param in params:
         URL = URL.replace('<' + param + '>', str(params[param]))
     return URL
+
+def send_email(subject, message, recipients):
+    email_conf = Config.get_section('Email')
+
+    server_name = email_conf['server']
+    server_port = int(email_conf['port'])
+    from_sender = email_conf['from']
+    server_login = email_conf['login']
+    server_password = email_conf['password']
+    to_recipient = recipients
+
+    full_message = MIMEText(message)
+    full_message['Subject'] = subject
+    full_message['From'] = from_sender
+    full_message['To'] = ", ".join(to_recipient)
+
+    server = smtplib.SMTP(server_name, server_port)
+    server.starttls()
+    server.login(server_login, server_password)
+    server.sendmail(from_sender, to_recipient, full_message.as_string())
+    server.quit()
