@@ -50,6 +50,7 @@ class BaseModule():
 
     events_schema = (DB.Column('id', DB.BigInteger, primary_key=True),
                      DB.Column('module', DB.String(64)),
+                     DB.Column('state', DB.String(64)),
                      DB.Column('name', DB.String(64)),
                      DB.Column('type', DB.String(32)),
                      DB.Column('time', DB.DateTime(True)),
@@ -99,9 +100,10 @@ class BaseModule():
 
     # --------------------------------------------------------------------------
 
-    def create_event(self, name, event_type, time, severity, description):
+    def create_event(self, name, state, event_type, time, severity, description):
         event = {'module': self.name,
                  'name': name,
+                 'state': state,
                  'type': event_type,
                  'time': time,
                  'severity': severity,
@@ -143,7 +145,7 @@ class BaseModule():
                 last_status_name = self.get_status_from_status_code(last_status['status'])
                 new_status_name = self.get_status_from_status_code(status['status'])
                 event_name = status['name'] + ':' + last_status_name + '->' + new_status_name
-                event = self.create_event(event_name, 'StatusChange', status['time'], status['status'], status['description'])
+                event = self.create_event(event_name, status['name'] ,'StatusChange' , status['time'], status['status'], status['description'])
                 event_list.append(event)
                 self.write_event(event)
 
