@@ -1,20 +1,22 @@
 language: python
 python:
-  - "2.7"
-services: 
-  - postgresql
+- '2.7'
+addons:
+  sonarcloud:
+    organization: "tier-one-monitoring"
+services:
+- postgresql
 before_script:
-  - cp -f .travis/default.cfg test.cfg
-  - pip install pytest pytest-cov==2.6.0 python-coveralls mock coveralls
-  - pip install -r requirements.txt
-  - psql -c 'create database travis_test;' -U postgres
-# command to install dependencies
-install: 
-  - pip install -e .
-# command to run tests
-script: 
-  - coverage run --source=Monstr setup.py test
+- cp -f .travis/default.cfg test.cfg
+- pip install pytest pytest-cov==2.6.0 python-coveralls mock coveralls
+- pip install -r requirements.txt
+- psql -c 'create database travis_test;' -U postgres
+install:
+- pip install -e .
+script:
+- coverage run --source=Monstr setup.py test
+- sonar-scanner
 after_success:
-  - coveralls
+- coveralls
 notifications:
   email: false

@@ -44,6 +44,9 @@ def send_email(subject, message, recipients):
     email_conf = Config.get_section('Email')
 
     server_name = email_conf['server']
+    if server_name == 'None':
+        print "SMTP server set to None. Skipping..."
+        return
     server_port = int(email_conf['port'])
     from_sender = email_conf['from']
     server_login = email_conf['login']
