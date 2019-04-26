@@ -6,7 +6,7 @@ addons:
     organization: "tier-one-monitoring" - the key of the org you chose at step #3
     token:
       secure: nOkxLTdYSWK9Tkh2WqHbbIn9HrhDjbEOOokD2TYIer9XnQPvqhNLhtZh0zvVuUdLGwmNlQ2FulAt9rWil1LEBDitr7wiAE/0k0ccsvgTkKta7Yoh3lRN5keQvw0FwSranuneYIhBmvqrug5uvk3EA6uli7aoJpi/G3mdGoWSrnWYg5PaedrJj9VuNveb5egQant8BO7lsmYRdL0th7M8oiDhJv2PaW634/aZmL7ioUYj5Ip368vuvwmfw2MdL0YygA/xFfpy2F3TUYBDOdZl1nLuGPjPiKnHArlB55HgjBvHYfS65DnBOoP6XvnYWdvbM5SWmfDSCb2Xey4U+yQEnOBTvcuhr1n3Dt2aNTvYy9w8DiOm2sCMiEQ8zQmlurv2n+vEfuPrEhQwcltOBBvD2xp1cOCfTrx2+EGkkkhtl/VKgNEekk2asOWxgXKW8avPmyJkMt/88rCwkWGMBYRu3NApyRTUnI5WK715RLPzYivbVYQDxYMpcYEJqn2JQNI9DSfWnv6I39iZTj16wLFq9+KG588VFQymlIxIWcEv3ZMEuVf0e9E0WXrjpadwO5yhLAWoFvUmZZnP2GIPlCLZGWH7Iu1T6BHJSHDyiA+RQas77wuyMVRrxxhWYzliw/LqLc16TpBk/ZbJc091lZvAwcSFKtRFo+Q2Pjfj2fmRIAQ=
-services:1
+services:
 - postgresql
 before_script:
 - cp -f .travis/default.cfg test.cfg
