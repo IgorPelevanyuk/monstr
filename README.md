@@ -1,5 +1,6 @@
 # monstr
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/ada1eefa40b747b8af5d6ab7e84e5374)](https://app.codacy.com/app/IgorPelevanyuk/monstr?utm_source=github.com&utm_medium=referral&utm_content=tier-one-monitoring/monstr&utm_campaign=Badge_Grade_Dashboard)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=tier-one-monitoring_monstr&metric=alert_status)](https://sonarcloud.io/dashboard?id=tier-one-monitoring_monstr)
 [![Build Status](https://travis-ci.org/tier-one-monitoring/monstr.svg?branch=master)](https://travis-ci.org/tier-one-monitoring/monstr)
 [![Coverage Status](https://coveralls.io/repos/github/tier-one-monitoring/monstr/badge.svg?branch=master)](https://coveralls.io/github/tier-one-monitoring/monstr?branch=master)
 
