@@ -1,6 +1,5 @@
 #!/bin/python
 from datetime import timedelta
-
 from sqlalchemy import asc
 
 import Monstr.Core.Utils as Utils
@@ -34,8 +33,8 @@ class StatusTimeline(BaseModule.BaseModule):
             time_now = Utils.get_UTC_now()
             query = self.events_table.select((self.events_table.c.time > time_now - timedelta(hours=params['delta']))).order_by(asc(self.events_table.c.time))
             cursor = query.execute()
-            resultProxy = cursor.fetchall()
-            for row in resultProxy:
+            result_proxy = cursor.fetchall()
+            for row in result_proxy:
                 result.append(dict(row.items()))
             response = {'data': result,
                         'applied_params': params,
