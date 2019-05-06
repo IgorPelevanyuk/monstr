@@ -15,6 +15,7 @@ install:
 - pip install -e .
 script:
 - coverage run --source=Monstr setup.py test
+- coverage xml
 - sonar-scanner
 after_success:
 - coveralls
